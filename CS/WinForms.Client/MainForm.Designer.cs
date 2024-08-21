@@ -26,8 +26,9 @@
         {
             components = new System.ComponentModel.Container();
             gridControl1 = new DevExpress.XtraGrid.GridControl();
+            virtualServerModeSource = new DevExpress.Data.VirtualServerModeSource(components);
             gridView1 = new DevExpress.XtraGrid.Views.Grid.GridView();
-            colID = new DevExpress.XtraGrid.Columns.GridColumn();
+            colId = new DevExpress.XtraGrid.Columns.GridColumn();
             colProductName = new DevExpress.XtraGrid.Columns.GridColumn();
             colUnitPrice = new DevExpress.XtraGrid.Columns.GridColumn();
             colQuantity = new DevExpress.XtraGrid.Columns.GridColumn();
@@ -36,18 +37,18 @@
             MainFormlayoutControl1ConvertedLayout = new DevExpress.XtraLayout.LayoutControl();
             layoutControlGroup1 = new DevExpress.XtraLayout.LayoutControlGroup();
             gridControl1item = new DevExpress.XtraLayout.LayoutControlItem();
-            virtualServerModeSource = new DevExpress.Data.VirtualServerModeSource(components);
             ((System.ComponentModel.ISupportInitialize)gridControl1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)virtualServerModeSource).BeginInit();
             ((System.ComponentModel.ISupportInitialize)gridView1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)MainFormlayoutControl1ConvertedLayout).BeginInit();
             MainFormlayoutControl1ConvertedLayout.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)layoutControlGroup1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)gridControl1item).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)virtualServerModeSource).BeginInit();
             SuspendLayout();
             // 
             // gridControl1
             // 
+            gridControl1.DataSource = virtualServerModeSource;
             gridControl1.Location = new Point(12, 12);
             gridControl1.MainView = gridView1;
             gridControl1.Name = "gridControl1";
@@ -55,19 +56,25 @@
             gridControl1.TabIndex = 0;
             gridControl1.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] { gridView1 });
             // 
+            // virtualServerModeSource
+            // 
+            virtualServerModeSource.RowType = typeof(OrderItem);
+            virtualServerModeSource.ConfigurationChanged += VirtualServerModeSource_ConfigurationChanged;
+            virtualServerModeSource.MoreRows += VirtualServerModeSource_MoreRows;
+            // 
             // gridView1
             // 
-            gridView1.Columns.AddRange(new DevExpress.XtraGrid.Columns.GridColumn[] { colID, colProductName, colUnitPrice, colQuantity, colDiscount, colOrderDate });
+            gridView1.Columns.AddRange(new DevExpress.XtraGrid.Columns.GridColumn[] { colId, colProductName, colUnitPrice, colQuantity, colDiscount, colOrderDate });
             gridView1.GridControl = gridControl1;
             gridView1.Name = "gridView1";
             gridView1.OptionsView.ShowGroupPanel = false;
             // 
-            // colID
+            // colId
             // 
-            colID.FieldName = "Id";
-            colID.Name = "colID";
-            colID.Visible = true;
-            colID.VisibleIndex = 0;
+            colId.FieldName = "Id";
+            colId.Name = "colId";
+            colId.Visible = true;
+            colId.VisibleIndex = 0;
             // 
             // colProductName
             // 
@@ -99,8 +106,6 @@
             // 
             // colOrderDate
             // 
-            colOrderDate.DisplayFormat.FormatString = "MM/dd/yyyy";
-            colOrderDate.DisplayFormat.FormatType = DevExpress.Utils.FormatType.DateTime;
             colOrderDate.FieldName = "OrderDate";
             colOrderDate.Name = "colOrderDate";
             colOrderDate.Visible = true;
@@ -143,12 +148,12 @@
             Name = "MainForm";
             Text = "MainForm";
             ((System.ComponentModel.ISupportInitialize)gridControl1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)virtualServerModeSource).EndInit();
             ((System.ComponentModel.ISupportInitialize)gridView1).EndInit();
             ((System.ComponentModel.ISupportInitialize)MainFormlayoutControl1ConvertedLayout).EndInit();
             MainFormlayoutControl1ConvertedLayout.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)layoutControlGroup1).EndInit();
             ((System.ComponentModel.ISupportInitialize)gridControl1item).EndInit();
-            ((System.ComponentModel.ISupportInitialize)virtualServerModeSource).EndInit();
             ResumeLayout(false);
         }
 
@@ -156,15 +161,15 @@
 
         private DevExpress.XtraGrid.GridControl gridControl1;
         private DevExpress.XtraGrid.Views.Grid.GridView gridView1;
-        private DevExpress.XtraGrid.Columns.GridColumn colID;
+        private DevExpress.XtraLayout.LayoutControl MainFormlayoutControl1ConvertedLayout;
+        private DevExpress.XtraLayout.LayoutControlGroup layoutControlGroup1;
+        private DevExpress.XtraLayout.LayoutControlItem gridControl1item;
+        private DevExpress.Data.VirtualServerModeSource virtualServerModeSource;
+        private DevExpress.XtraGrid.Columns.GridColumn colId;
         private DevExpress.XtraGrid.Columns.GridColumn colProductName;
         private DevExpress.XtraGrid.Columns.GridColumn colUnitPrice;
         private DevExpress.XtraGrid.Columns.GridColumn colQuantity;
         private DevExpress.XtraGrid.Columns.GridColumn colDiscount;
         private DevExpress.XtraGrid.Columns.GridColumn colOrderDate;
-        private DevExpress.XtraLayout.LayoutControl MainFormlayoutControl1ConvertedLayout;
-        private DevExpress.XtraLayout.LayoutControlGroup layoutControlGroup1;
-        private DevExpress.XtraLayout.LayoutControlItem gridControl1item;
-        private DevExpress.Data.VirtualServerModeSource virtualServerModeSource;
     }
 }

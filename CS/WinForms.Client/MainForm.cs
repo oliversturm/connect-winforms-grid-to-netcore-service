@@ -7,12 +7,6 @@ namespace WinForms.Client
         public MainForm()
         {
             InitializeComponent();
-
-            virtualServerModeSource.RowType = typeof(OrderItem);
-            virtualServerModeSource.ConfigurationChanged += VirtualServerModeSource_ConfigurationChanged;
-            virtualServerModeSource.MoreRows += VirtualServerModeSource_MoreRows;
-
-            gridControl1.DataSource = virtualServerModeSource;
         }
 
         private VirtualServerModeDataLoader? loader;
