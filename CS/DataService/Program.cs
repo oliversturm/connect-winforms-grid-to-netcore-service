@@ -6,7 +6,7 @@ using System.Xml.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-string? connectionString = builder.Configuration.GetConnectionString("SqlExpressConnectionString");
+string? connectionString = builder.Configuration.GetConnectionString("ConnectionString");
 
 builder.Services.AddDbContext<DataServiceDbContext>(o =>
   o.UseSqlServer(connectionString, options =>
