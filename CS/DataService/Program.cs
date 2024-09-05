@@ -6,7 +6,7 @@ using System.Xml.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-string? connectionString = builder.Configuration.GetConnectionString("ConnectionString");
+string? connectionString = builder.Configuration.GetConnectionString("SqlExpressConnectionString");
 
 builder.Services.AddDbContext<DataServiceDbContext>(o =>
   o.UseSqlServer(connectionString, options =>
@@ -59,6 +59,51 @@ app.MapGet("/data/OrderItems", async (DataServiceDbContext dbContext, int skip =
         Items = items,
         TotalCount = totalCount
     });
+});
+
+app.MapGet("/data/OrderItem/{id}", async (DataServiceDbContext dbContext, int id) =>
+{
+    var orderItem = await dbContext.OrderItems.FindAsync(id);
+
+    if (orderItem is null)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.Ok(orderItem);
+});
+
+app.MapPost("/data/OrderItem", async (DataServiceDbContext dbContext, OrderItem orderItem) =>
+{
+    dbContext.OrderItems.Add(orderItem);
+    await dbContext.SaveChangesAsync();
+    return Results.Created($"/data/OrderItem/{orderItem.Id}", orderItem);
+});
+
+app.MapPut("/data/OrderItem/{id}", async (DataServiceDbContext dbContext, int id, OrderItem orderItem) =>
+{
+    if (id != orderItem.Id)
+    {
+        return Results.BadRequest("Id mismatch");
+    }
+
+    dbContext.Entry(orderItem).State = EntityState.Modified;
+    await dbContext.SaveChangesAsync();
+    return Results.NoContent();
+});
+
+app.MapDelete("/data/OrderItem/{id}", async (DataServiceDbContext dbContext, int id) =>
+{
+    var orderItem = await dbContext.OrderItems.FindAsync(id);
+
+    if (orderItem is null)
+    {
+        return Results.NotFound();
+    }
+
+    dbContext.OrderItems.Remove(orderItem);
+    await dbContext.SaveChangesAsync();
+    return Results.NoContent();
 });
 
 app.Run();
