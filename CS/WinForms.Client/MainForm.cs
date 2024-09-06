@@ -2,6 +2,7 @@ using DevExpress.XtraEditors;
 using DevExpress.XtraGrid;
 using DevExpress.XtraGrid.Views.Grid;
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace WinForms.Client
 {
@@ -74,7 +75,9 @@ namespace WinForms.Client
 
         private void gridView1_RowEditCanceled(object sender, DevExpress.XtraGrid.Views.Base.RowObjectEventArgs e)
         {
-            loadedOrderItems.Remove((OrderItem)e.Row);
+            Debug.WriteLine("RowEditCanceled");
+            //if (e.RowHandle == GridControl.NewItemRowHandle)
+            //    loadedOrderItems.Remove((OrderItem)e.Row);
         }
 
         private async void gridView1_RowDeleting(object sender, DevExpress.Data.RowDeletingEventArgs e)
