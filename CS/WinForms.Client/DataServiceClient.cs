@@ -69,7 +69,6 @@ namespace WinForms.Client
             var response = await client.PutAsync($"{baseUrl}/data/OrderItem/{orderItem.Id}",
                 new StringContent(JsonSerializer.Serialize(orderItem), Encoding.UTF8, "application/json"));
             response.EnsureSuccessStatusCode();
-            var responseBody = await response.Content.ReadAsStringAsync();
         }
 
         public static async Task<bool> DeleteOrderItemAsync(int id)
