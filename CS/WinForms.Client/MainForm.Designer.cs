@@ -54,7 +54,6 @@
             gridControl1.Name = "gridControl1";
             gridControl1.Size = new Size(776, 426);
             gridControl1.TabIndex = 0;
-            gridControl1.UseEmbeddedNavigator = true;
             gridControl1.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] { gridView1 });
             // 
             // virtualServerModeSource
@@ -62,19 +61,18 @@
             virtualServerModeSource.RowType = typeof(OrderItem);
             virtualServerModeSource.ConfigurationChanged += VirtualServerModeSource_ConfigurationChanged;
             virtualServerModeSource.MoreRows += VirtualServerModeSource_MoreRows;
-            virtualServerModeSource.AcquireInnerList += virtualServerModeSource_AcquireInnerList;
             // 
             // gridView1
             // 
             gridView1.Columns.AddRange(new DevExpress.XtraGrid.Columns.GridColumn[] { colId, colProductName, colUnitPrice, colQuantity, colDiscount, colOrderDate });
+            gridView1.FocusRectStyle = DevExpress.XtraGrid.Views.Grid.DrawFocusRectStyle.RowFocus;
             gridView1.GridControl = gridControl1;
             gridView1.Name = "gridView1";
-            gridView1.OptionsView.NewItemRowPosition = DevExpress.XtraGrid.Views.Grid.NewItemRowPosition.Top;
+            gridView1.OptionsBehavior.AllowAddRows = DevExpress.Utils.DefaultBoolean.False;
+            gridView1.OptionsBehavior.AllowDeleteRows = DevExpress.Utils.DefaultBoolean.False;
+            gridView1.OptionsBehavior.Editable = false;
             gridView1.OptionsView.ShowGroupPanel = false;
-            gridView1.InitNewRow += gridView1_InitNewRow;
-            gridView1.RowDeleting += gridView1_RowDeleting;
-            gridView1.RowUpdated += gridView1_RowUpdated;
-            gridView1.RowEditCanceled += gridView1_RowEditCanceled;
+            gridView1.DoubleClick += gridView1_DoubleClick;
             // 
             // colId
             // 
