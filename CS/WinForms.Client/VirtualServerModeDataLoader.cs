@@ -1,7 +1,5 @@
 ﻿using DevExpress.Data;
 using System.Diagnostics;
-using System.Net.Http;
-using System.Text.Json;
 
 namespace WinForms.Client
 {
@@ -35,16 +33,7 @@ namespace WinForms.Client
             return Task.Run(async () =>
             {
                 Debug.WriteLine($"Fetching data rows {e.CurrentRowCount} to {e.CurrentRowCount + BatchSize}, sorting by {SortField} ({(SortAscending ? "asc" : "desc")})");
-                using var client = new HttpClient();
-                var response = await client.GetAsync(
-                    $"{System.Configuration.ConfigurationManager.AppSettings["baseUrl"]}/data/OrderItems?skip={e.CurrentRowCount}&take={BatchSize}&sortField={SortField}&sortAscending={SortAscending}");
-                response.EnsureSuccessStatusCode();
-                var responseBody = await response.Content.ReadAsStringAsync();
-
-                var dataFetchResult = JsonSerializer.Deserialize<DataFetchResult>(responseBody, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                var dataFetchResult = await DataServiceClient.GetOrderItemsAsync(e.CurrentRowCount, BatchSize, SortField, SortAscending);
 
                 if (dataFetchResult is null)
                     return new VirtualServerModeRowsTaskResult();
