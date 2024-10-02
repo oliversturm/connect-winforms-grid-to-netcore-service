@@ -1,31 +1,136 @@
 ﻿using System.Diagnostics;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace WinForms.Client
 {
     public static class DataServiceClient
     {
+        public class BearerTokenHandler : DelegatingHandler
+        {
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                if (!String.IsNullOrWhiteSpace(accessToken))
+                {
+                    if (!String.IsNullOrWhiteSpace(refreshToken) &&
+                        lastRefreshed.HasValue &&
+                        expiresIn.HasValue &&
+                        DateTime.Now - lastRefreshed > TimeSpan.FromSeconds((int)(expiresIn - 60)))
+                    {
+                        if (string.IsNullOrEmpty(authUrl))
+                            throw new InvalidOperationException("The 'authUrl' configuration setting is missing.");
+                        if (string.IsNullOrEmpty(realm))
+                            throw new InvalidOperationException("The 'realm' configuration setting is missing.");
+                        if (string.IsNullOrEmpty(clientId))
+                            throw new InvalidOperationException("The 'clientId' configuration setting is missing.");
+
+                        var content = new FormUrlEncodedContent(new Dictionary<string, string>
+                        {
+                            {"grant_type", "refresh_token"},
+                            {"client_id", clientId},
+                            {"refresh_token", refreshToken}
+                        });
+
+                        var url = $"{authUrl}/realms/{realm}/protocol/openid-connect/token";
+                        var response = await bareHttpClient.PostAsync(url, content);
+                        response.EnsureSuccessStatusCode();
+                        var responseString = await response.Content.ReadAsStringAsync();
+                        (accessToken, refreshToken, expiresIn) = GetTokens(responseString);
+                        if (accessToken != null)
+                        {
+                            lastRefreshed = DateTime.Now;
+                            (name, realmAccess) = GetUserDetails(accessToken);
+                        }
+                    }
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                }
+                return await base.SendAsync(request, cancellationToken);
+            }
+        }
+
         static DataServiceClient()
         {
-            string? url = System.Configuration.ConfigurationManager.AppSettings["baseUrl"];
-            if (string.IsNullOrEmpty(url))
+            if (string.IsNullOrEmpty(baseUrl))
                 throw new InvalidOperationException("The 'baseUrl' configuration setting is missing.");
-            baseUrl = url;
         }
 
-        static string baseUrl;
+        static string? baseUrl = System.Configuration.ConfigurationManager.AppSettings["baseUrl"];
 
-        static HttpClient CreateClient()
+        static string? accessToken;
+        public static bool LoggedIn => accessToken != null;
+        static string? refreshToken;
+        static int? expiresIn;
+        static DateTime? lastRefreshed;
+        static string? name;
+        static string? Name => name;
+        static string? realmAccess;
+        static string? clientId = System.Configuration.ConfigurationManager.AppSettings["clientId"];
+        static string? realm = System.Configuration.ConfigurationManager.AppSettings["realm"];
+        static string? authUrl = System.Configuration.ConfigurationManager.AppSettings["authUrl"];
+
+        static HttpClient bareHttpClient = new HttpClient();
+
+        static (string? access_token, string? refresh_token, int? expires_in) GetTokens(string jsonString)
         {
-            return new HttpClient();
+            var node = JsonNode.Parse(jsonString);
+            if (node == null)
+                return (null, null, null);
+            else
+                return (node["access_token"]?.GetValue<string>(),
+                    node["refresh_token"]?.GetValue<string>(),
+                    node["expires_in"]?.GetValue<int>());
         }
+
+        static (string? name, string? realmAccess) GetUserDetails(string? accessToken)
+        {
+            if (String.IsNullOrEmpty(accessToken))
+                return (null, null);
+            var handler = new JwtSecurityTokenHandler();
+            var token = handler.ReadJwtToken(accessToken);
+
+            var claim = (string claimType) => token.Claims.FirstOrDefault(c => c.Type == claimType)?.Value;
+
+            return (claim("name"), claim("realm_access"));
+        }
+
+        public static async Task<bool> LogIn(string username, string password)
+        {
+            if (string.IsNullOrEmpty(authUrl))
+                throw new InvalidOperationException("The 'authUrl' configuration setting is missing.");
+            if (string.IsNullOrEmpty(realm))
+                throw new InvalidOperationException("The 'realm' configuration setting is missing.");
+            if (string.IsNullOrEmpty(clientId))
+                throw new InvalidOperationException("The 'clientId' configuration setting is missing.");
+
+            var content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                {"client_id", clientId},
+                {"username", username},
+                {"password", password},
+                {"grant_type", "password"}
+            });
+            var url = $"{authUrl}/realms/{realm}/protocol/openid-connect/token";
+            var response = await bareHttpClient.PostAsync(url, content);
+            response.EnsureSuccessStatusCode();
+            var responseString = await response.Content.ReadAsStringAsync();
+            (accessToken, refreshToken, expiresIn) = GetTokens(responseString);
+            if (accessToken != null)
+            {
+                lastRefreshed = DateTime.Now;
+                (name, realmAccess) = GetUserDetails(accessToken);
+            }
+            return true;
+        }
+
+        static HttpClient authorizedHttpClient = new HttpClient(new BearerTokenHandler());
 
         public static async Task<DataFetchResult?> GetOrderItemsAsync(int skip, int take, string sortField, bool sortAscending)
         {
-            using var client = CreateClient();
-            var response = await client.GetAsync(
+            var response = await authorizedHttpClient.GetAsync(
                 $"{baseUrl}/data/OrderItems?skip={skip}&take={take}&sortField={sortField}&sortAscending={sortAscending}");
             response.EnsureSuccessStatusCode();
             var responseBody = await response.Content.ReadAsStringAsync();
@@ -47,8 +152,7 @@ namespace WinForms.Client
 
         public static async Task<OrderItem?> GetOrderItemAsync(int id)
         {
-            using var client = CreateClient();
-            var response = await client.GetAsync($"{baseUrl}/data/OrderItem/{id}");
+            var response = await authorizedHttpClient.GetAsync($"{baseUrl}/data/OrderItem/{id}");
             response.EnsureSuccessStatusCode();
             var responseBody = await response.Content.ReadAsStringAsync();
             return responseBody.AsOrderItem();
@@ -56,8 +160,7 @@ namespace WinForms.Client
 
         public static async Task<OrderItem?> CreateOrderItemAsync(OrderItem orderItem)
         {
-            using var client = CreateClient();
-            var response = await client.PostAsync($"{baseUrl}/data/OrderItem",
+            var response = await authorizedHttpClient.PostAsync($"{baseUrl}/data/OrderItem",
                 new StringContent(JsonSerializer.Serialize(orderItem), Encoding.UTF8, "application/json"));
             response.EnsureSuccessStatusCode();
             var responseBody = await response.Content.ReadAsStringAsync();
@@ -66,8 +169,7 @@ namespace WinForms.Client
 
         public static async Task UpdateOrderItemAsync(OrderItem orderItem)
         {
-            using var client = CreateClient();
-            var response = await client.PutAsync($"{baseUrl}/data/OrderItem/{orderItem.Id}",
+            var response = await authorizedHttpClient.PutAsync($"{baseUrl}/data/OrderItem/{orderItem.Id}",
                 new StringContent(JsonSerializer.Serialize(orderItem), Encoding.UTF8, "application/json"));
             response.EnsureSuccessStatusCode();
         }
@@ -76,8 +178,7 @@ namespace WinForms.Client
         {
             try
             {
-                using var client = CreateClient();
-                var response = await client.DeleteAsync($"{baseUrl}/data/OrderItem/{id}");
+                var response = await authorizedHttpClient.DeleteAsync($"{baseUrl}/data/OrderItem/{id}");
                 response.EnsureSuccessStatusCode();
                 return true;
             }

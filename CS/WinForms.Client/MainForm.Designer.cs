@@ -26,7 +26,6 @@
         {
             components = new System.ComponentModel.Container();
             gridControl = new DevExpress.XtraGrid.GridControl();
-            virtualServerModeSource = new DevExpress.Data.VirtualServerModeSource(components);
             gridView1 = new DevExpress.XtraGrid.Views.Grid.GridView();
             colId = new DevExpress.XtraGrid.Columns.GridColumn();
             colProductName = new DevExpress.XtraGrid.Columns.GridColumn();
@@ -34,42 +33,38 @@
             colQuantity = new DevExpress.XtraGrid.Columns.GridColumn();
             colDiscount = new DevExpress.XtraGrid.Columns.GridColumn();
             colOrderDate = new DevExpress.XtraGrid.Columns.GridColumn();
+            virtualServerModeSource = new DevExpress.Data.VirtualServerModeSource(components);
             MainFormlayoutControl1ConvertedLayout = new DevExpress.XtraLayout.LayoutControl();
             layoutControlGroup1 = new DevExpress.XtraLayout.LayoutControlGroup();
             gridControl1item = new DevExpress.XtraLayout.LayoutControlItem();
             barManager = new DevExpress.XtraBars.BarManager(components);
             bar1 = new DevExpress.XtraBars.Bar();
             addItemButton = new DevExpress.XtraBars.BarButtonItem();
+            deleteItemButton = new DevExpress.XtraBars.BarButtonItem();
             barDockControlTop = new DevExpress.XtraBars.BarDockControl();
             barDockControlBottom = new DevExpress.XtraBars.BarDockControl();
             barDockControlLeft = new DevExpress.XtraBars.BarDockControl();
             barDockControlRight = new DevExpress.XtraBars.BarDockControl();
-            deleteItemButton = new DevExpress.XtraBars.BarButtonItem();
+            svgImageCollection = new DevExpress.Utils.SvgImageCollection(components);
             ((System.ComponentModel.ISupportInitialize)gridControl).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)virtualServerModeSource).BeginInit();
             ((System.ComponentModel.ISupportInitialize)gridView1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)virtualServerModeSource).BeginInit();
             ((System.ComponentModel.ISupportInitialize)MainFormlayoutControl1ConvertedLayout).BeginInit();
             MainFormlayoutControl1ConvertedLayout.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)layoutControlGroup1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)gridControl1item).BeginInit();
             ((System.ComponentModel.ISupportInitialize)barManager).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)svgImageCollection).BeginInit();
             SuspendLayout();
             // 
             // gridControl
             // 
-            gridControl.DataSource = virtualServerModeSource;
             gridControl.Location = new Point(12, 12);
             gridControl.MainView = gridView1;
             gridControl.Name = "gridControl";
             gridControl.Size = new Size(776, 406);
             gridControl.TabIndex = 0;
             gridControl.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] { gridView1 });
-            // 
-            // virtualServerModeSource
-            // 
-            virtualServerModeSource.RowType = typeof(OrderItem);
-            virtualServerModeSource.ConfigurationChanged += VirtualServerModeSource_ConfigurationChanged;
-            virtualServerModeSource.MoreRows += VirtualServerModeSource_MoreRows;
             // 
             // gridView1
             // 
@@ -124,6 +119,12 @@
             colOrderDate.Name = "colOrderDate";
             colOrderDate.Visible = true;
             colOrderDate.VisibleIndex = 5;
+            // 
+            // virtualServerModeSource
+            // 
+            virtualServerModeSource.RowType = typeof(OrderItem);
+            virtualServerModeSource.ConfigurationChanged += VirtualServerModeSource_ConfigurationChanged;
+            virtualServerModeSource.MoreRows += VirtualServerModeSource_MoreRows;
             // 
             // MainFormlayoutControl1ConvertedLayout
             // 
@@ -180,6 +181,13 @@
             addItemButton.Name = "addItemButton";
             addItemButton.ItemClick += addItemButton_ItemClick;
             // 
+            // deleteItemButton
+            // 
+            deleteItemButton.Caption = "Delete Focused Item";
+            deleteItemButton.Id = 1;
+            deleteItemButton.Name = "deleteItemButton";
+            deleteItemButton.ItemClick += deleteItemButton_ItemClick;
+            // 
             // barDockControlTop
             // 
             barDockControlTop.CausesValidation = false;
@@ -212,12 +220,10 @@
             barDockControlRight.Manager = barManager;
             barDockControlRight.Size = new Size(0, 430);
             // 
-            // deleteItemButton
+            // svgImageCollection
             // 
-            deleteItemButton.Caption = "Delete Focused Item";
-            deleteItemButton.Id = 1;
-            deleteItemButton.Name = "deleteItemButton";
-            deleteItemButton.ItemClick += deleteItemButton_ItemClick;
+            svgImageCollection.ImageSize = new Size(64, 64);
+            svgImageCollection.Add("bo_security_permission", "image://svgimages/business objects/bo_security_permission.svg");
             // 
             // MainForm
             // 
@@ -232,13 +238,14 @@
             Name = "MainForm";
             Text = "MainForm";
             ((System.ComponentModel.ISupportInitialize)gridControl).EndInit();
-            ((System.ComponentModel.ISupportInitialize)virtualServerModeSource).EndInit();
             ((System.ComponentModel.ISupportInitialize)gridView1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)virtualServerModeSource).EndInit();
             ((System.ComponentModel.ISupportInitialize)MainFormlayoutControl1ConvertedLayout).EndInit();
             MainFormlayoutControl1ConvertedLayout.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)layoutControlGroup1).EndInit();
             ((System.ComponentModel.ISupportInitialize)gridControl1item).EndInit();
             ((System.ComponentModel.ISupportInitialize)barManager).EndInit();
+            ((System.ComponentModel.ISupportInitialize)svgImageCollection).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -265,5 +272,6 @@
         private DevExpress.XtraBars.BarDockControl barDockControlRight;
         private DevExpress.XtraBars.BarButtonItem addItemButton;
         private DevExpress.XtraBars.BarButtonItem deleteItemButton;
+        private DevExpress.Utils.SvgImageCollection svgImageCollection;
     }
 }
