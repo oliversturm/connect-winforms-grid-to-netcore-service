@@ -11,6 +11,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         options.RequireHttpsMetadata = false; // Development only!!
         options.Authority = "http://10.0.20.17:8080";
+        //options.Authority = "http://10.0.18.27:8080";
         options.Audience = "account";
     });
 builder.Services.AddAuthorization();

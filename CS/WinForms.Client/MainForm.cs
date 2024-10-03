@@ -3,6 +3,7 @@ using DevExpress.XtraEditors;
 using DevExpress.XtraGrid.Views.Base;
 using DevExpress.XtraGrid.Views.Grid;
 using DevExpress.XtraSplashScreen;
+using System.Drawing.Text;
 
 namespace WinForms.Client
 {
@@ -13,23 +14,35 @@ namespace WinForms.Client
             InitializeComponent();
         }
 
+        class CustomOverlayTextPainter(string text) : OverlayWindowPainterBase
+        {
+            static readonly Font font = new("Tahoma", 16, FontStyle.Bold);
+
+            protected override void Draw(OverlayWindowCustomDrawContext context)
+            {
+                var cache = context.DrawArgs.Cache;
+                cache.TextRenderingHint = TextRenderingHint.AntiAlias;
+
+                context.DrawBackground();
+
+                var bounds = context.DrawArgs.Bounds;
+                var midX = bounds.Left + bounds.Width / 2;
+                var midY = bounds.Top + bounds.Height / 2;
+
+                SizeF textSize = cache.CalcTextSize(text, font);
+                cache.DrawString(text, font, Brushes.Black, new PointF(midX - textSize.Width / 2, midY + 30));
+
+                context.Handled = true;
+            }
+        }
+
         class CustomOverlayImagePainter : OverlayImagePainter
         {
             public CustomOverlayImagePainter(Image image, Action clickAction) : base(image, clickAction: clickAction) { }
 
             protected override Rectangle CalcImageBounds(OverlayLayeredWindowObjectInfoArgs drawArgs)
             {
-                return Image.Size.AlignWith(drawArgs.Bounds).WithY(550);
-            }
-        }
-
-        class CustomOverlayTextPainter : OverlayTextPainter
-        {
-            public CustomOverlayTextPainter(string text) : base(text) { }
-            protected override Rectangle CalcTextBounds(OverlayLayeredWindowObjectInfoArgs drawArgs)
-            {
-                Size textSz = CalcTextSize(drawArgs);
-                return textSz.AlignWith(drawArgs.Bounds).WithY(700);
+                return Image.Size.AlignWith(drawArgs.Bounds).WithY(300);
             }
         }
 
@@ -40,7 +53,7 @@ namespace WinForms.Client
             base.OnShown(e);
 
             overlayHandle = SplashScreenManager.ShowOverlayForm(this,
-                animationType: WaitAnimationType.Line,
+                opacity: 200,
                 customPainter: new OverlayWindowCompositePainter(
                     new CustomOverlayTextPainter("Click the lock to log in"),
                     new CustomOverlayImagePainter(svgImageCollection.GetImage(0), LogIn)
