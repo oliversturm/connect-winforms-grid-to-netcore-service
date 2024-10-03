@@ -1,18 +1,30 @@
 using DataService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.Linq.Dynamic.Core;
 using System.Reflection;
 using System.Xml.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var publicKey = await GetKeycloakPublicKey(builder.Configuration["Jwt:KeycloakUrl"]!, builder.Configuration["Jwt:Realm"]!);
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.RequireHttpsMetadata = false; // Development only!!
-        options.Authority = "http://10.0.20.17:8080";
-        //options.Authority = "http://10.0.18.27:8080";
-        options.Audience = "account";
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = $"{builder.Configuration["Jwt:KeycloakUrl"]}/realms/{builder.Configuration["Jwt:Realm"]}",
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = publicKey
+        };
     });
 builder.Services.AddAuthorization();
 
@@ -120,3 +132,15 @@ app.MapDelete("/data/OrderItem/{id}", async (DataServiceDbContext dbContext, int
 
 app.Run();
 
+
+
+static async Task<SecurityKey> GetKeycloakPublicKey(string keycloakUrl, string realm)
+{
+    using (var httpClient = new HttpClient())
+    {
+        var jwksUrl = $"{keycloakUrl}/realms/{realm}/protocol/openid-connect/certs";
+        var jwksJson = await httpClient.GetStringAsync(jwksUrl);
+        var jwks = new JsonWebKeySet(jwksJson);
+        return jwks.Keys[0];
+    }
+}

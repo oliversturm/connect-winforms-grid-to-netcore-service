@@ -12,6 +12,11 @@ namespace WinForms.Client
     {
         public class BearerTokenHandler : DelegatingHandler
         {
+            public BearerTokenHandler()
+            {
+                InnerHandler = new HttpClientHandler();
+            }
+
             protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
                 if (!String.IsNullOrWhiteSpace(accessToken))
