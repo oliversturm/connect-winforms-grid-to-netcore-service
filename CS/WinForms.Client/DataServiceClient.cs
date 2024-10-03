@@ -71,7 +71,7 @@ namespace WinForms.Client
         static int? expiresIn;
         static DateTime? lastRefreshed;
         static string? name;
-        static string? Name => name;
+        public static string? Name => name;
         static string? realmAccess;
         static string? clientId = System.Configuration.ConfigurationManager.AppSettings["clientId"];
         static string? realm = System.Configuration.ConfigurationManager.AppSettings["realm"];
@@ -120,15 +120,33 @@ namespace WinForms.Client
             });
             var url = $"{authUrl}/realms/{realm}/protocol/openid-connect/token";
             var response = await bareHttpClient.PostAsync(url, content);
-            response.EnsureSuccessStatusCode();
-            var responseString = await response.Content.ReadAsStringAsync();
-            (accessToken, refreshToken, expiresIn) = GetTokens(responseString);
-            if (accessToken != null)
+            try
             {
-                lastRefreshed = DateTime.Now;
-                (name, realmAccess) = GetUserDetails(accessToken);
+                response.EnsureSuccessStatusCode();
+                var responseString = await response.Content.ReadAsStringAsync();
+                (accessToken, refreshToken, expiresIn) = GetTokens(responseString);
+                if (accessToken != null)
+                {
+                    lastRefreshed = DateTime.Now;
+                    (name, realmAccess) = GetUserDetails(accessToken);
+                }
+                return true;
             }
-            return true;
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                return false;
+            }
+        }
+
+        public static void LogOut()
+        {
+            accessToken = null;
+            refreshToken = null;
+            expiresIn = null;
+            lastRefreshed = null;
+            name = null;
+            realmAccess = null;
         }
 
         static HttpClient authorizedHttpClient = new HttpClient(new BearerTokenHandler());

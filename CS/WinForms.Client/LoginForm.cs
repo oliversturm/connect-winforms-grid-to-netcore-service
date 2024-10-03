@@ -18,9 +18,16 @@ namespace WinForms.Client
                 return;
             }
 
-            await DataServiceClient.LogIn(userNameEdit.Text, passwordEdit.Text);
-            this.DialogResult = DialogResult.OK;
-            this.Close();
+            if (await DataServiceClient.LogIn(userNameEdit.Text, passwordEdit.Text))
+            {
+                this.DialogResult = DialogResult.OK;
+                this.Close();
+            }
+            else
+            {
+                XtraMessageBox.Show("Username or password are invalid, or a technical error occurred.", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }

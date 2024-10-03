@@ -41,6 +41,8 @@
             bar1 = new DevExpress.XtraBars.Bar();
             addItemButton = new DevExpress.XtraBars.BarButtonItem();
             deleteItemButton = new DevExpress.XtraBars.BarButtonItem();
+            bar2 = new DevExpress.XtraBars.Bar();
+            logOutItem = new DevExpress.XtraBars.BarButtonItem();
             barDockControlTop = new DevExpress.XtraBars.BarDockControl();
             barDockControlBottom = new DevExpress.XtraBars.BarDockControl();
             barDockControlLeft = new DevExpress.XtraBars.BarDockControl();
@@ -156,14 +158,14 @@
             // 
             // barManager
             // 
-            barManager.Bars.AddRange(new DevExpress.XtraBars.Bar[] { bar1 });
+            barManager.Bars.AddRange(new DevExpress.XtraBars.Bar[] { bar1, bar2 });
             barManager.DockControls.Add(barDockControlTop);
             barManager.DockControls.Add(barDockControlBottom);
             barManager.DockControls.Add(barDockControlLeft);
             barManager.DockControls.Add(barDockControlRight);
             barManager.Form = this;
-            barManager.Items.AddRange(new DevExpress.XtraBars.BarItem[] { addItemButton, deleteItemButton });
-            barManager.MaxItemId = 2;
+            barManager.Items.AddRange(new DevExpress.XtraBars.BarItem[] { addItemButton, deleteItemButton, logOutItem });
+            barManager.MaxItemId = 3;
             // 
             // bar1
             // 
@@ -187,6 +189,22 @@
             deleteItemButton.Id = 1;
             deleteItemButton.Name = "deleteItemButton";
             deleteItemButton.ItemClick += deleteItemButton_ItemClick;
+            // 
+            // bar2
+            // 
+            bar2.BarName = "Custom 3";
+            bar2.DockCol = 1;
+            bar2.DockRow = 0;
+            bar2.DockStyle = DevExpress.XtraBars.BarDockStyle.Top;
+            bar2.LinksPersistInfo.AddRange(new DevExpress.XtraBars.LinkPersistInfo[] { new DevExpress.XtraBars.LinkPersistInfo(logOutItem) });
+            bar2.Text = "Custom 3";
+            // 
+            // logOutItem
+            // 
+            logOutItem.Caption = "Log Out";
+            logOutItem.Id = 2;
+            logOutItem.Name = "logOutItem";
+            logOutItem.ItemClick += logOutItem_ItemClick;
             // 
             // barDockControlTop
             // 
@@ -273,5 +291,7 @@
         private DevExpress.XtraBars.BarButtonItem addItemButton;
         private DevExpress.XtraBars.BarButtonItem deleteItemButton;
         private DevExpress.Utils.SvgImageCollection svgImageCollection;
+        private DevExpress.XtraBars.Bar bar2;
+        private DevExpress.XtraBars.BarButtonItem logOutItem;
     }
 }

@@ -52,6 +52,11 @@ namespace WinForms.Client
         {
             base.OnShown(e);
 
+            ShowOverlay();
+        }
+
+        private void ShowOverlay()
+        {
             overlayHandle = SplashScreenManager.ShowOverlayForm(this,
                 opacity: 200,
                 customPainter: new OverlayWindowCompositePainter(
@@ -66,9 +71,21 @@ namespace WinForms.Client
             loginForm.ShowDialog();
             if (DataServiceClient.LoggedIn)
             {
+                logOutItem.Caption = $"Log out {DataServiceClient.Name}";
                 if (overlayHandle is not null)
                     SplashScreenManager.CloseOverlayForm(overlayHandle);
                 Invoke(new Action(() => { gridControl.DataSource = virtualServerModeSource; }));
+            }
+        }
+
+        private void logOutItem_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        {
+            if (DataServiceClient.LoggedIn)
+            {
+                gridControl.DataSource = null;
+                logOutItem.Caption = "Log Out";
+                DataServiceClient.LogOut();
+                ShowOverlay();
             }
         }
 
@@ -126,5 +143,6 @@ namespace WinForms.Client
                 view.RefreshData();
             }
         }
+
     }
 }
