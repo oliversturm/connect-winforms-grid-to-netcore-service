@@ -1,4 +1,3 @@
-using DevExpress.Utils.Extensions;
 using DevExpress.XtraEditors;
 using DevExpress.XtraGrid.Views.Base;
 using DevExpress.XtraGrid.Views.Grid;
@@ -42,7 +41,9 @@ namespace WinForms.Client
 
             protected override Rectangle CalcImageBounds(OverlayLayeredWindowObjectInfoArgs drawArgs)
             {
-                return Image.Size.AlignWith(drawArgs.Bounds).WithY(300);
+                var midX = drawArgs.Bounds.Left + drawArgs.Bounds.Width / 2;
+                var midY = drawArgs.Bounds.Top + drawArgs.Bounds.Height / 2;
+                return new Rectangle(new Point(midX - Image.Size.Width / 2, midY - Image.Size.Height / 2 - 50), Image.Size);
             }
         }
 
