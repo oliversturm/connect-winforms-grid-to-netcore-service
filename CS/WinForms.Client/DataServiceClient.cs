@@ -48,7 +48,7 @@ namespace WinForms.Client
                         if (accessToken != null)
                         {
                             lastRefreshed = DateTime.Now;
-                            (name, realmAccess) = GetUserDetails(accessToken);
+                            (name, realmRoles) = GetUserDetails(accessToken);
                         }
                     }
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -72,7 +72,8 @@ namespace WinForms.Client
         static DateTime? lastRefreshed;
         static string? name;
         public static string? Name => name;
-        static string? realmAccess;
+        static string[]? realmRoles;
+        public static bool UserHasRole(string role) => realmRoles != null && realmRoles.Contains(role);
         static string? clientId = System.Configuration.ConfigurationManager.AppSettings["clientId"];
         static string? realm = System.Configuration.ConfigurationManager.AppSettings["realm"];
         static string? authUrl = System.Configuration.ConfigurationManager.AppSettings["authUrl"];
@@ -90,16 +91,22 @@ namespace WinForms.Client
                     node["expires_in"]?.GetValue<int>());
         }
 
-        static (string? name, string? realmAccess) GetUserDetails(string? accessToken)
+        static (string? name, string[] realmRoles) GetUserDetails(string? accessToken)
         {
             if (String.IsNullOrEmpty(accessToken))
-                return (null, null);
+                return (null, []);
             var handler = new JwtSecurityTokenHandler();
             var token = handler.ReadJwtToken(accessToken);
 
             var claim = (string claimType) => token.Claims.FirstOrDefault(c => c.Type == claimType)?.Value;
+            var name = claim("name");
+            var realmAccess = claim("realm_access");
+            var node = JsonNode.Parse(realmAccess);
+            if (node == null || node["roles"] == null) return (name, []);
+            var array = node["roles"]!.AsArray();
+            var realmRoles = array.Select(r => r.GetValue<string>()).ToArray();
 
-            return (claim("name"), claim("realm_access"));
+            return (name, realmRoles);
         }
 
         public static async Task<bool> LogIn(string username, string password)
@@ -128,7 +135,7 @@ namespace WinForms.Client
                 if (accessToken != null)
                 {
                     lastRefreshed = DateTime.Now;
-                    (name, realmAccess) = GetUserDetails(accessToken);
+                    (name, realmRoles) = GetUserDetails(accessToken);
                 }
                 return true;
             }
@@ -146,7 +153,7 @@ namespace WinForms.Client
             expiresIn = null;
             lastRefreshed = null;
             name = null;
-            realmAccess = null;
+            realmRoles = null;
         }
 
         static HttpClient authorizedHttpClient = new HttpClient(new BearerTokenHandler());

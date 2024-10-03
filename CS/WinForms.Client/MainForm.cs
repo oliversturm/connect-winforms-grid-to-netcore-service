@@ -67,14 +67,18 @@ namespace WinForms.Client
 
         private void LogIn()
         {
-            var loginForm = new LoginForm();
-            loginForm.ShowDialog();
-            if (DataServiceClient.LoggedIn)
+            if (!DataServiceClient.LoggedIn)
             {
-                logOutItem.Caption = $"Log out {DataServiceClient.Name}";
-                if (overlayHandle is not null)
-                    SplashScreenManager.CloseOverlayForm(overlayHandle);
-                Invoke(new Action(() => { gridControl.DataSource = virtualServerModeSource; }));
+                var loginForm = new LoginForm();
+                loginForm.ShowDialog();
+                if (DataServiceClient.LoggedIn)
+                {
+                    EvaluateRoles();
+                    logOutItem.Caption = $"Log out {DataServiceClient.Name}{(userIsWriter ? " (Writer)" : "")}";
+                    if (overlayHandle is not null)
+                        SplashScreenManager.CloseOverlayForm(overlayHandle);
+                    Invoke(new Action(() => { gridControl.DataSource = virtualServerModeSource; }));
+                }
             }
         }
 
@@ -82,10 +86,38 @@ namespace WinForms.Client
         {
             if (DataServiceClient.LoggedIn)
             {
+                EvaluateRoles();
                 gridControl.DataSource = null;
                 logOutItem.Caption = "Log Out";
                 DataServiceClient.LogOut();
                 ShowOverlay();
+            }
+        }
+
+        private bool userIsWriter = false;
+
+        private void EvaluateRoles()
+        {
+            if (DataServiceClient.LoggedIn)
+            {
+                if (DataServiceClient.UserHasRole("writer"))
+                {
+                    userIsWriter = true;
+                    addItemButton.Enabled = true;
+                    deleteItemButton.Enabled = true;
+                }
+                else
+                {
+                    userIsWriter = false;
+                    addItemButton.Enabled = false;
+                    deleteItemButton.Enabled = false;
+                }
+            }
+            else
+            {
+                userIsWriter = false;
+                addItemButton.Enabled = false;
+                deleteItemButton.Enabled = false;
             }
         }
 
@@ -105,8 +137,19 @@ namespace WinForms.Client
             }
         }
 
+        private void NotAWriterError()
+        {
+            XtraMessageBox.Show("You are not authorized to edit items.", "Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
         private async void gridView1_DoubleClick(object sender, EventArgs e)
         {
+            if (!userIsWriter)
+            {
+                NotAWriterError();
+                return;
+            }
             if (sender is GridView view)
             {
                 if (view.FocusedRowObject is OrderItem oi)
@@ -123,6 +166,11 @@ namespace WinForms.Client
 
         private async void addItemButton_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
+            if (!userIsWriter)
+            {
+                NotAWriterError();
+                return;
+            }
             if (gridControl.FocusedView is ColumnView view)
             {
                 var createResult = EditForm.CreateItem();
@@ -136,6 +184,11 @@ namespace WinForms.Client
 
         private async void deleteItemButton_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
+            if (!userIsWriter)
+            {
+                NotAWriterError();
+                return;
+            }
             if (gridControl.FocusedView is ColumnView view &&
                 view.GetFocusedRow() is OrderItem orderItem)
             {
