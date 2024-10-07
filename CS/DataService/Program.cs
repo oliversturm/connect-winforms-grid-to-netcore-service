@@ -1,9 +1,11 @@
 using DataService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Linq.Dynamic.Core;
 using System.Reflection;
+using System.Text.Json.Nodes;
 using System.Xml.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,7 +28,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = publicKey
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(o =>
+{
+    o.AddPolicy("writers", p => p.RequireRealmRole("writers"));
+});
 
 string? connectionString = builder.Configuration.GetConnectionString("ConnectionString");
 
@@ -46,6 +51,11 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<DataServiceDbContext>();
     dbContext.Database.Migrate();
 }
+
+
+// Note that this endpoint is NOT configured to require authorization. For the demo,
+// this makes it possible to populate the database with test data without having to
+// authenticate first. In a real-world application, you would want to secure this endpoint.
 
 app.MapGet("/api/populateTestData", async (DataServiceDbContext dbContext) =>
 {
@@ -69,7 +79,9 @@ app.MapGet("/api/populateTestData", async (DataServiceDbContext dbContext) =>
     }
 
     return Results.NotFound("Error populating data");
-}).RequireAuthorization();
+});
+
+// The following two endpoints are read-only, so they only require an authenticated user.
 
 app.MapGet("/data/OrderItems", async (DataServiceDbContext dbContext, int skip = 0, int take = 20, string sortField = "Id", bool sortAscending = true) =>
 {
@@ -97,12 +109,16 @@ app.MapGet("/data/OrderItem/{id}", async (DataServiceDbContext dbContext, int id
     return Results.Ok(orderItem);
 }).RequireAuthorization();
 
+
+// The following endpoints are read-write, so they require an authenticated user and 
+// compliance with the "writers" policy.
+
 app.MapPost("/data/OrderItem", async (DataServiceDbContext dbContext, OrderItem orderItem) =>
 {
     dbContext.OrderItems.Add(orderItem);
     await dbContext.SaveChangesAsync();
     return Results.Created($"/data/OrderItem/{orderItem.Id}", orderItem);
-}).RequireAuthorization();
+}).RequireAuthorization("writers");
 
 app.MapPut("/data/OrderItem/{id}", async (DataServiceDbContext dbContext, int id, OrderItem orderItem) =>
 {
@@ -114,7 +130,7 @@ app.MapPut("/data/OrderItem/{id}", async (DataServiceDbContext dbContext, int id
     dbContext.Entry(orderItem).State = EntityState.Modified;
     await dbContext.SaveChangesAsync();
     return Results.NoContent();
-}).RequireAuthorization();
+}).RequireAuthorization("writers");
 
 app.MapDelete("/data/OrderItem/{id}", async (DataServiceDbContext dbContext, int id) =>
 {
@@ -128,7 +144,7 @@ app.MapDelete("/data/OrderItem/{id}", async (DataServiceDbContext dbContext, int
     dbContext.OrderItems.Remove(orderItem);
     await dbContext.SaveChangesAsync();
     return Results.NoContent();
-}).RequireAuthorization();
+}).RequireAuthorization("writers");
 
 app.Run();
 
@@ -142,5 +158,22 @@ static async Task<SecurityKey> GetKeycloakPublicKey(string keycloakUrl, string r
         var jwksJson = await httpClient.GetStringAsync(jwksUrl);
         var jwks = new JsonWebKeySet(jwksJson);
         return jwks.Keys[0];
+    }
+}
+
+
+public static class PolicyHelpers
+{
+    public static void RequireRealmRole(this AuthorizationPolicyBuilder policy, string roleName)
+    {
+        policy.RequireAssertion(context =>
+        {
+            var realmAccess = context.User.FindFirst("realm_access")?.Value;
+            if (realmAccess == null) return false;
+            var node = JsonNode.Parse(realmAccess);
+            if (node == null || node["roles"] == null) return false;
+            var array = node["roles"]!.AsArray();
+            return array.Select(r => r?.GetValue<string>()).Contains(roleName);
+        });
     }
 }

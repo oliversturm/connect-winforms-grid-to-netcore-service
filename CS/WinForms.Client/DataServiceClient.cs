@@ -72,7 +72,7 @@ namespace WinForms.Client
         static DateTime? lastRefreshed;
         static string? name;
         public static string? Name => name;
-        static string[]? realmRoles;
+        static string?[]? realmRoles;
         public static bool UserHasRole(string role) => realmRoles != null && realmRoles.Contains(role);
         static string? clientId = System.Configuration.ConfigurationManager.AppSettings["clientId"];
         static string? realm = System.Configuration.ConfigurationManager.AppSettings["realm"];
@@ -91,7 +91,7 @@ namespace WinForms.Client
                     node["expires_in"]?.GetValue<int>());
         }
 
-        static (string? name, string[] realmRoles) GetUserDetails(string? accessToken)
+        static (string? name, string?[] realmRoles) GetUserDetails(string? accessToken)
         {
             if (String.IsNullOrEmpty(accessToken))
                 return (null, []);
@@ -104,7 +104,7 @@ namespace WinForms.Client
             var node = JsonNode.Parse(realmAccess);
             if (node == null || node["roles"] == null) return (name, []);
             var array = node["roles"]!.AsArray();
-            var realmRoles = array.Select(r => r.GetValue<string>()).ToArray();
+            var realmRoles = array.Select(r => r?.GetValue<string>()).ToArray();
 
             return (name, realmRoles);
         }

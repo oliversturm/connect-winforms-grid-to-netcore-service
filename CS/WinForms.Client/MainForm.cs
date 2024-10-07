@@ -101,7 +101,7 @@ namespace WinForms.Client
         {
             if (DataServiceClient.LoggedIn)
             {
-                if (DataServiceClient.UserHasRole("writer"))
+                if (DataServiceClient.UserHasRole("writers"))
                 {
                     userIsWriter = true;
                     addItemButton.Enabled = true;
