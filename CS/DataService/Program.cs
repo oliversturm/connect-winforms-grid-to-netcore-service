@@ -33,7 +33,7 @@ builder.Services.AddAuthorization(o =>
     o.AddPolicy("writers", p => p.RequireRealmRole("writers"));
 });
 
-string? connectionString = builder.Configuration.GetConnectionString("ConnectionString");
+string? connectionString = builder.Configuration.GetConnectionString("SqlExpressConnectionString");
 
 builder.Services.AddDbContext<DataServiceDbContext>(o =>
   o.UseSqlServer(connectionString, options =>
