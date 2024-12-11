@@ -54,6 +54,8 @@ namespace WinForms.Client
             base.OnShown(e);
 
             ShowOverlay();
+
+            DataServiceClient.LogInStatusChanged += LogInStatusChanged;
         }
 
         private void ShowOverlay()
@@ -70,16 +72,19 @@ namespace WinForms.Client
         {
             if (!DataServiceClient.LoggedIn)
             {
-                var loginForm = new LoginForm();
-                loginForm.ShowDialog();
-                if (DataServiceClient.LoggedIn)
-                {
-                    EvaluateRoles();
-                    logOutItem.Caption = $"Log out {DataServiceClient.Name}{(userIsWriter ? " (Writer)" : "")}";
-                    if (overlayHandle is not null)
-                        SplashScreenManager.CloseOverlayForm(overlayHandle);
-                    Invoke(new Action(() => { gridControl.DataSource = virtualServerModeSource; }));
-                }
+                DataServiceClient.LogIn();
+            }
+        }
+
+        private void LogInStatusChanged(object? sender, EventArgs e)
+        {
+            if (DataServiceClient.LoggedIn)
+            {
+                EvaluateRoles();
+                logOutItem.Caption = $"Log out {DataServiceClient.Name}{(userIsWriter ? " (Writer)" : "")}";
+                if (overlayHandle is not null)
+                    SplashScreenManager.CloseOverlayForm(overlayHandle);
+                Invoke(new Action(() => { gridControl.DataSource = virtualServerModeSource; }));
             }
         }
 

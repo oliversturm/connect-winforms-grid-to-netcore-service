@@ -95,7 +95,7 @@ namespace WinForms.Client
 
         static void StartProtocolMessageListener()
         {
-            Task.Run(() =>
+            Task.Run(async () =>
             {
                 while (true)
                 {
@@ -103,14 +103,15 @@ namespace WinForms.Client
                     server.WaitForConnection();
                     using var reader = new StreamReader(server);
                     var msg = reader.ReadToEnd();
-                    HandleProtocolMessage(msg);
+                    await HandleProtocolMessage(msg);
                 }
             });
         }
 
-        static void HandleProtocolMessage(string msg)
+        static async Task HandleProtocolMessage(string msg)
         {
             Console.WriteLine($"Handling protocol message: '{msg}'");
+            await DataServiceClient.AcceptProtocolUrl(msg);
         }
     }
 }

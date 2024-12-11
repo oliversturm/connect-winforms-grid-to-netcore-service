@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Flurl;
+using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -40,16 +41,26 @@ namespace WinForms.Client
                             {"refresh_token", refreshToken}
                         });
 
-                        var url = $"{authUrl}/realms/{realm}/protocol/openid-connect/token";
+                        var url = Url.Combine(authUrl, "realms", realm, "protocol", "openid-connect", "token");
                         var response = await bareHttpClient.PostAsync(url, content);
                         response.EnsureSuccessStatusCode();
                         var responseString = await response.Content.ReadAsStringAsync();
-                        (accessToken, refreshToken, expiresIn) = GetTokens(responseString);
-                        if (accessToken != null)
+                        // According to various docs, some of these return fields are optional, while the presence of 
+                        // others depends on Keycloak version or configuration. So we better be careful not to
+                        // overwrite anything with nulls.
+                        var (newIdToken, newAccessToken, newRefreshToken, newExpiresIn) = GetTokens(responseString);
+                        if (newIdToken != null)
+                            idToken = newIdToken;
+                        if (newAccessToken != null)
                         {
                             lastRefreshed = DateTime.Now;
-                            (name, realmRoles) = GetUserDetails(accessToken);
+                            (name, realmRoles) = GetUserDetails(newAccessToken);
+                            accessToken = newAccessToken;
                         }
+                        if (newRefreshToken != null)
+                            refreshToken = newRefreshToken;
+                        if (newExpiresIn != null)
+                            expiresIn = newExpiresIn;
                     }
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
                 }
@@ -65,6 +76,7 @@ namespace WinForms.Client
 
         static string? baseUrl = System.Configuration.ConfigurationManager.AppSettings["baseUrl"];
 
+        static string? idToken;
         static string? accessToken;
         public static bool LoggedIn => accessToken != null;
         static string? refreshToken;
@@ -74,19 +86,21 @@ namespace WinForms.Client
         public static string? Name => name;
         static string?[]? realmRoles;
         public static bool UserHasRole(string role) => realmRoles != null && realmRoles.Contains(role);
+        static string? redirectUri = System.Configuration.ConfigurationManager.AppSettings["redirectUri"];
         static string? clientId = System.Configuration.ConfigurationManager.AppSettings["clientId"];
         static string? realm = System.Configuration.ConfigurationManager.AppSettings["realm"];
         static string? authUrl = System.Configuration.ConfigurationManager.AppSettings["authUrl"];
 
         static HttpClient bareHttpClient = new HttpClient();
 
-        static (string? access_token, string? refresh_token, int? expires_in) GetTokens(string jsonString)
+        static (string? id_token, string? access_token, string? refresh_token, int? expires_in) GetTokens(string jsonString)
         {
             var node = JsonNode.Parse(jsonString);
             if (node == null)
-                return (null, null, null);
+                return (null, null, null, null);
             else
-                return (node["access_token"]?.GetValue<string>(),
+                return (node["id_token"]?.GetValue<string>(),
+                    node["access_token"]?.GetValue<string>(),
                     node["refresh_token"]?.GetValue<string>(),
                     node["expires_in"]?.GetValue<int>());
         }
@@ -109,7 +123,9 @@ namespace WinForms.Client
             return (name, realmRoles);
         }
 
-        public static async Task<bool> LogIn(string username, string password)
+        public static event EventHandler? LogInStatusChanged;
+
+        public static void LogIn()
         {
             if (string.IsNullOrEmpty(authUrl))
                 throw new InvalidOperationException("The 'authUrl' configuration setting is missing.");
@@ -117,43 +133,84 @@ namespace WinForms.Client
                 throw new InvalidOperationException("The 'realm' configuration setting is missing.");
             if (string.IsNullOrEmpty(clientId))
                 throw new InvalidOperationException("The 'clientId' configuration setting is missing.");
+            if (string.IsNullOrEmpty(redirectUri))
+                throw new InvalidOperationException("The 'redirectUri' configuration setting is missing.");
 
-            var content = new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                {"client_id", clientId},
-                {"username", username},
-                {"password", password},
-                {"grant_type", "password"}
-            });
-            var url = $"{authUrl}/realms/{realm}/protocol/openid-connect/token";
-            var response = await bareHttpClient.PostAsync(url, content);
-            try
-            {
-                response.EnsureSuccessStatusCode();
-                var responseString = await response.Content.ReadAsStringAsync();
-                (accessToken, refreshToken, expiresIn) = GetTokens(responseString);
-                if (accessToken != null)
+            var url = Url.Combine(authUrl, "realms", realm, "protocol", "openid-connect", "auth")
+                .SetQueryParams(new
                 {
-                    lastRefreshed = DateTime.Now;
-                    (name, realmRoles) = GetUserDetails(accessToken);
-                }
-                return true;
-            }
-            catch (Exception ex)
+                    response_type = "code",
+                    client_id = clientId,
+                    redirect_uri = redirectUri
+                });
+
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+
+        public static async Task AcceptProtocolUrl(string protocolUrlString)
+        {
+            var protocolUrl = new Url(protocolUrlString);
+            if (protocolUrl.QueryParams.TryGetFirst("code", out object codeObject) && codeObject is string code)
             {
-                Debug.WriteLine(ex);
-                return false;
+                if (string.IsNullOrEmpty(authUrl))
+                    throw new InvalidOperationException("The 'authUrl' configuration setting is missing.");
+                if (string.IsNullOrEmpty(realm))
+                    throw new InvalidOperationException("The 'realm' configuration setting is missing.");
+                if (string.IsNullOrEmpty(clientId))
+                    throw new InvalidOperationException("The 'clientId' configuration setting is missing.");
+                if (string.IsNullOrEmpty(redirectUri))
+                    throw new InvalidOperationException("The 'redirectUri' configuration setting is missing.");
+
+                var content = new FormUrlEncodedContent(new Dictionary<string, string>
+                    {
+                        {"grant_type", "authorization_code"},
+                        {"client_id", clientId},
+                        {"code", code},
+                        {"redirect_uri", redirectUri }
+                    });
+                var url = Url.Combine(authUrl, "realms", realm, "protocol", "openid-connect", "token");
+
+                var response = await bareHttpClient.PostAsync(url, content);
+                try
+                {
+                    response.EnsureSuccessStatusCode();
+                    var responseString = response.Content.ReadAsStringAsync().Result;
+                    (idToken, accessToken, refreshToken, expiresIn) = GetTokens(responseString);
+                    if (accessToken != null)
+                    {
+                        lastRefreshed = DateTime.Now;
+                        (name, realmRoles) = GetUserDetails(accessToken);
+                        LogInStatusChanged?.Invoke(null, EventArgs.Empty);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex);
+                }
+            }
+            else
+            {
+                idToken = null;
+                accessToken = null;
+                refreshToken = null;
+                expiresIn = null;
+                lastRefreshed = null;
+                name = null;
+                realmRoles = null;
+                LogInStatusChanged?.Invoke(null, EventArgs.Empty);
             }
         }
 
         public static void LogOut()
         {
-            accessToken = null;
-            refreshToken = null;
-            expiresIn = null;
-            lastRefreshed = null;
-            name = null;
-            realmRoles = null;
+            var url = Url.Combine(authUrl, "realms", realm, "protocol", "openid-connect", "logout")
+                .SetQueryParams(new
+                {
+                    post_logout_redirect_uri = redirectUri,
+                    id_token_hint = idToken
+                });
+
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
 
         static HttpClient authorizedHttpClient = new HttpClient(new BearerTokenHandler());
