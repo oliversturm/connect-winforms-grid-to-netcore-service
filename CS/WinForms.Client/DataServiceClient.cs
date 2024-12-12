@@ -27,12 +27,7 @@ namespace WinForms.Client
                         expiresIn.HasValue &&
                         DateTime.Now - lastRefreshed > TimeSpan.FromSeconds((int)(expiresIn - 60)))
                     {
-                        if (string.IsNullOrEmpty(authUrl))
-                            throw new InvalidOperationException("The 'authUrl' configuration setting is missing.");
-                        if (string.IsNullOrEmpty(realm))
-                            throw new InvalidOperationException("The 'realm' configuration setting is missing.");
-                        if (string.IsNullOrEmpty(clientId))
-                            throw new InvalidOperationException("The 'clientId' configuration setting is missing.");
+                        CheckSettings(["authUrl", "realm", "clientId"]);
 
                         var content = new FormUrlEncodedContent(new Dictionary<string, string>
                         {
@@ -68,10 +63,18 @@ namespace WinForms.Client
             }
         }
 
+        static void CheckSettings(ReadOnlySpan<string> settings)
+        {
+            foreach (var setting in settings)
+            {
+                if (string.IsNullOrEmpty(setting))
+                    throw new InvalidOperationException($"The '{setting}' configuration setting is missing.");
+            }
+        }
+
         static DataServiceClient()
         {
-            if (string.IsNullOrEmpty(baseUrl))
-                throw new InvalidOperationException("The 'baseUrl' configuration setting is missing.");
+            CheckSettings(["baseUrl"]);
         }
 
         static string? baseUrl = System.Configuration.ConfigurationManager.AppSettings["baseUrl"];
@@ -127,14 +130,7 @@ namespace WinForms.Client
 
         public static void LogIn()
         {
-            if (string.IsNullOrEmpty(authUrl))
-                throw new InvalidOperationException("The 'authUrl' configuration setting is missing.");
-            if (string.IsNullOrEmpty(realm))
-                throw new InvalidOperationException("The 'realm' configuration setting is missing.");
-            if (string.IsNullOrEmpty(clientId))
-                throw new InvalidOperationException("The 'clientId' configuration setting is missing.");
-            if (string.IsNullOrEmpty(redirectUri))
-                throw new InvalidOperationException("The 'redirectUri' configuration setting is missing.");
+            CheckSettings(["authUrl", "realm", "clientId", "redirectUri"]);
 
             var url = Url.Combine(authUrl, "realms", realm, "protocol", "openid-connect", "auth")
                 .SetQueryParams(new
@@ -156,14 +152,7 @@ namespace WinForms.Client
             var protocolUrl = new Url(protocolUrlString);
             if (protocolUrl.QueryParams.TryGetFirst("code", out object codeObject) && codeObject is string code)
             {
-                if (string.IsNullOrEmpty(authUrl))
-                    throw new InvalidOperationException("The 'authUrl' configuration setting is missing.");
-                if (string.IsNullOrEmpty(realm))
-                    throw new InvalidOperationException("The 'realm' configuration setting is missing.");
-                if (string.IsNullOrEmpty(clientId))
-                    throw new InvalidOperationException("The 'clientId' configuration setting is missing.");
-                if (string.IsNullOrEmpty(redirectUri))
-                    throw new InvalidOperationException("The 'redirectUri' configuration setting is missing.");
+                CheckSettings(["authUrl", "realm", "clientId", "redirectUri"]);
 
                 var content = new FormUrlEncodedContent(new Dictionary<string, string>
                     {
