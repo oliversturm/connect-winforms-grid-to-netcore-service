@@ -141,7 +141,11 @@ namespace WinForms.Client
                 {
                     response_type = "code",
                     client_id = clientId,
-                    redirect_uri = redirectUri
+                    redirect_uri = redirectUri,
+                    // Note that Keycloak may not make the scope "openid" availably by default. If necessary,
+                    // create it in the Client scopes list for your realm, and add it to the Client scopes
+                    // list of your client registration.
+                    scope = "openid profile email"
                 });
 
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
