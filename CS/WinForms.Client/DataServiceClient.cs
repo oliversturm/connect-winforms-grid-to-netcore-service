@@ -32,7 +32,7 @@ namespace WinForms.Client
                         var content = new FormUrlEncodedContent(new Dictionary<string, string>
                         {
                             {"grant_type", "refresh_token"},
-                            {"client_id", clientId},
+                            {"client_id", clientId!},
                             {"refresh_token", refreshToken}
                         });
 
@@ -157,9 +157,9 @@ namespace WinForms.Client
                 var content = new FormUrlEncodedContent(new Dictionary<string, string>
                     {
                         {"grant_type", "authorization_code"},
-                        {"client_id", clientId},
+                        {"client_id", clientId!},
                         {"code", code},
-                        {"redirect_uri", redirectUri }
+                        {"redirect_uri", redirectUri! }
                     });
                 var url = Url.Combine(authUrl, "realms", realm, "protocol", "openid-connect", "token");
 
