@@ -82,7 +82,7 @@ namespace WinForms.Client
                 key.SetValue("URL Protocol", string.Empty);
                 using (var commandKey = key.CreateSubKey(@"shell\open\command"))
                 {
-                    commandKey.SetValue(string.Empty, applicationPath + " " + "%1");
+                    commandKey.SetValue(string.Empty, $"{applicationPath} %1");
                 }
             }
         }
