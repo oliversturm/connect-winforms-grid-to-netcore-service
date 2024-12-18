@@ -17,7 +17,7 @@
                 UnitPrice = orderItem.UnitPrice,
                 Quantity = orderItem.Quantity,
                 Discount = orderItem.Discount,
-                OrderDate = orderItem.OrderDate
+                OrderDate = orderItem.OrderDate,
             };
             form.orderItemBindingSource.DataSource = clonedItem;
             if (form.ShowDialog() == DialogResult.OK)
@@ -30,10 +30,7 @@
         public static (bool changesSaved, OrderItem? item) CreateItem()
         {
             using var form = new EditForm();
-            var newItem = new OrderItem()
-            {
-                OrderDate = DateTime.Now
-            };
+            var newItem = new OrderItem() { OrderDate = DateTime.Now };
             form.orderItemBindingSource.DataSource = newItem;
             if (form.ShowDialog() == DialogResult.OK)
             {

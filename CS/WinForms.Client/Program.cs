@@ -1,17 +1,17 @@
-using DevExpress.LookAndFeel;
-using DevExpress.XtraEditors;
-using Microsoft.Win32;
 using System.IO;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
+using DevExpress.LookAndFeel;
+using DevExpress.XtraEditors;
+using Microsoft.Win32;
 
 namespace WinForms.Client
 {
-
     internal static class Program
     {
         [DllImport("kernel32.dll")]
         static extern bool AttachConsole(int dwProcessId);
+
         private const int ATTACH_PARENT_PROCESS = -1;
         private const string pipeName = "WinAppDemoProtocolMessagePipe";
 
@@ -30,7 +30,7 @@ namespace WinForms.Client
             }
             else if (args.Length == 1)
             {
-                // Assuming that protocol messages should normally come in when another 
+                // Assuming that protocol messages should normally come in when another
                 // instance of the app is already running, try first to send the message
                 // to the existing app instance.
                 try
@@ -43,9 +43,11 @@ namespace WinForms.Client
                 {
                     // No existing instance found. We will start up as normal,
                     // but we won't handle the protocol message because this is an invalid state.
-                    // If a user logs in and a protocol message comes back, it cannot happen in 
+                    // If a user logs in and a protocol message comes back, it cannot happen in
                     // this simple demo that there is no instance of the app.
-                    Console.Error.WriteLine("Invalid state: protocol message received without an existing instance.");
+                    Console.Error.WriteLine(
+                        "Invalid state: protocol message received without an existing instance."
+                    );
                 }
             }
 

@@ -1,5 +1,5 @@
-﻿using DevExpress.Data;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using DevExpress.Data;
 
 namespace WinForms.Client
 {
@@ -30,18 +30,35 @@ namespace WinForms.Client
 
         public Task<VirtualServerModeRowsTaskResult> GetRowsAsync(VirtualServerModeRowsEventArgs e)
         {
-            return Task.Run(async () =>
-            {
-                Debug.WriteLine($"Fetching data rows {e.CurrentRowCount} to {e.CurrentRowCount + BatchSize}, sorting by {SortField} ({(SortAscending ? "asc" : "desc")})");
-                var dataFetchResult = await DataServiceClient.GetOrderItemsAsync(e.CurrentRowCount, BatchSize, SortField, SortAscending);
+            return Task.Run(
+                async () =>
+                {
+                    Debug.WriteLine(
+                        $"Fetching data rows {e.CurrentRowCount} to {e.CurrentRowCount + BatchSize}, sorting by {SortField} ({(SortAscending ? "asc" : "desc")})"
+                    );
+                    var dataFetchResult = await DataServiceClient.GetOrderItemsAsync(
+                        e.CurrentRowCount,
+                        BatchSize,
+                        SortField,
+                        SortAscending
+                    );
 
-                if (dataFetchResult is null)
-                    return new VirtualServerModeRowsTaskResult();
+                    if (dataFetchResult is null)
+                        return new VirtualServerModeRowsTaskResult();
 
-                var moreRowsAvailable = e.CurrentRowCount + dataFetchResult.Items.Count < dataFetchResult.TotalCount;
-                Debug.WriteLine($"Returning {dataFetchResult.Items.Count} items, more rows available: {moreRowsAvailable}");
-                return new VirtualServerModeRowsTaskResult(dataFetchResult.Items, moreRowsAvailable);
-            }, e.CancellationToken);
+                    var moreRowsAvailable =
+                        e.CurrentRowCount + dataFetchResult.Items.Count
+                        < dataFetchResult.TotalCount;
+                    Debug.WriteLine(
+                        $"Returning {dataFetchResult.Items.Count} items, more rows available: {moreRowsAvailable}"
+                    );
+                    return new VirtualServerModeRowsTaskResult(
+                        dataFetchResult.Items,
+                        moreRowsAvailable
+                    );
+                },
+                e.CancellationToken
+            );
         }
     }
 }

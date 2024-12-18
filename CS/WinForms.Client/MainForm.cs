@@ -1,8 +1,8 @@
+using System.Drawing.Text;
 using DevExpress.XtraEditors;
 using DevExpress.XtraGrid.Views.Base;
 using DevExpress.XtraGrid.Views.Grid;
 using DevExpress.XtraSplashScreen;
-using System.Drawing.Text;
 
 namespace WinForms.Client
 {
@@ -29,7 +29,12 @@ namespace WinForms.Client
                 var midY = bounds.Top + bounds.Height / 2;
 
                 SizeF textSize = cache.CalcTextSize(text, font);
-                cache.DrawString(text, font, Brushes.Black, new PointF(midX - textSize.Width / 2, midY + 30));
+                cache.DrawString(
+                    text,
+                    font,
+                    Brushes.Black,
+                    new PointF(midX - textSize.Width / 2, midY + 30)
+                );
 
                 context.Handled = true;
             }
@@ -37,13 +42,19 @@ namespace WinForms.Client
 
         class CustomOverlayImagePainter : OverlayImagePainter
         {
-            public CustomOverlayImagePainter(Image image, Action clickAction) : base(image, clickAction: clickAction) { }
+            public CustomOverlayImagePainter(Image image, Action clickAction)
+                : base(image, clickAction: clickAction) { }
 
-            protected override Rectangle CalcImageBounds(OverlayLayeredWindowObjectInfoArgs drawArgs)
+            protected override Rectangle CalcImageBounds(
+                OverlayLayeredWindowObjectInfoArgs drawArgs
+            )
             {
                 var midX = drawArgs.Bounds.Left + drawArgs.Bounds.Width / 2;
                 var midY = drawArgs.Bounds.Top + drawArgs.Bounds.Height / 2;
-                return new Rectangle(new Point(midX - Image.Size.Width / 2, midY - Image.Size.Height / 2 - 50), Image.Size);
+                return new Rectangle(
+                    new Point(midX - Image.Size.Width / 2, midY - Image.Size.Height / 2 - 50),
+                    Image.Size
+                );
             }
         }
 
@@ -60,12 +71,14 @@ namespace WinForms.Client
 
         private void ShowOverlay()
         {
-            overlayHandle = SplashScreenManager.ShowOverlayForm(this,
+            overlayHandle = SplashScreenManager.ShowOverlayForm(
+                this,
                 opacity: 200,
                 customPainter: new OverlayWindowCompositePainter(
                     new CustomOverlayTextPainter("Click the lock to log in"),
                     new CustomOverlayImagePainter(svgImageCollection.GetImage(0), LogIn)
-            ));
+                )
+            );
         }
 
         private void LogIn()
@@ -81,10 +94,16 @@ namespace WinForms.Client
             if (DataServiceClient.LoggedIn)
             {
                 EvaluateRoles();
-                logOutItem.Caption = $"Log out {DataServiceClient.Name}{(userIsWriter ? " (Writer)" : "")}";
+                logOutItem.Caption =
+                    $"Log out {DataServiceClient.Name}{(userIsWriter ? " (Writer)" : "")}";
                 if (overlayHandle is not null)
                     SplashScreenManager.CloseOverlayForm(overlayHandle);
-                Invoke(new Action(() => { gridControl.DataSource = virtualServerModeSource; }));
+                Invoke(
+                    new Action(() =>
+                    {
+                        gridControl.DataSource = virtualServerModeSource;
+                    })
+                );
             }
         }
 
@@ -129,13 +148,19 @@ namespace WinForms.Client
 
         private VirtualServerModeDataLoader? loader;
 
-        private void VirtualServerModeSource_ConfigurationChanged(object? sender, DevExpress.Data.VirtualServerModeRowsEventArgs e)
+        private void VirtualServerModeSource_ConfigurationChanged(
+            object? sender,
+            DevExpress.Data.VirtualServerModeRowsEventArgs e
+        )
         {
             loader = new VirtualServerModeDataLoader(e.ConfigurationInfo);
             e.RowsTask = loader.GetRowsAsync(e);
         }
 
-        private void VirtualServerModeSource_MoreRows(object? sender, DevExpress.Data.VirtualServerModeRowsEventArgs e)
+        private void VirtualServerModeSource_MoreRows(
+            object? sender,
+            DevExpress.Data.VirtualServerModeRowsEventArgs e
+        )
         {
             if (loader is not null)
             {
@@ -145,8 +170,12 @@ namespace WinForms.Client
 
         private void NotAWriterError()
         {
-            XtraMessageBox.Show("You are not authorized to edit items.", "Error",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            XtraMessageBox.Show(
+                "You are not authorized to edit items.",
+                "Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
         }
 
         private async void gridView1_DoubleClick(object sender, EventArgs e)
@@ -170,7 +199,10 @@ namespace WinForms.Client
             }
         }
 
-        private async void addItemButton_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        private async void addItemButton_ItemClick(
+            object sender,
+            DevExpress.XtraBars.ItemClickEventArgs e
+        )
         {
             if (!userIsWriter)
             {
@@ -188,20 +220,24 @@ namespace WinForms.Client
             }
         }
 
-        private async void deleteItemButton_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
+        private async void deleteItemButton_ItemClick(
+            object sender,
+            DevExpress.XtraBars.ItemClickEventArgs e
+        )
         {
             if (!userIsWriter)
             {
                 NotAWriterError();
                 return;
             }
-            if (gridControl.FocusedView is ColumnView view &&
-                view.GetFocusedRow() is OrderItem orderItem)
+            if (
+                gridControl.FocusedView is ColumnView view
+                && view.GetFocusedRow() is OrderItem orderItem
+            )
             {
                 await DataServiceClient.DeleteOrderItemAsync(orderItem.Id);
                 view.RefreshData();
             }
         }
-
     }
 }
